@@ -14,7 +14,7 @@
 
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="ServiceComponent" Guid="87654321-4321-4321-4321-210987654321" Bitness="always64">
-        <File Id="ServiceExe" Source="..\src\IpChanger.Service\bin\Release\net8.0\win-x64\publish\IpChanger.Service.exe" KeyPath="yes" />
+        <File Id="ServiceExe" Source="$(var.ServiceSourceDir)\IpChanger.Service.exe" KeyPath="yes" />
         <ServiceInstall Id="ServiceInstaller"
                         Type="ownProcess"
                         Name="IpChangerService"
@@ -27,9 +27,9 @@
       </Component>
 
       <Component Id="UIComponent" Guid="12345678-1234-1234-1234-1234567890AB" Bitness="always64">
-        <File Id="UIExe" Source="..\src\IpChanger.UI\bin\Release\net8.0-windows\win-x64\publish\IpChanger.UI.exe" KeyPath="yes" />
+        <File Id="UIExe" Source="$(var.UISourceDir)\IpChanger.UI.exe" KeyPath="yes" />
         <Shortcut Id="ApplicationStartMenuShortcut" 
-                  Directory="ProgramMenuFolder" 
+                  Directory="ProgramMenuFolder"
                   Name="IP Changer Tool" 
                   WorkingDirectory="INSTALLFOLDER" 
                   Advertise="yes" />
