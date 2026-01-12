@@ -38,6 +38,6 @@
   </g>
   
   <!-- IP letters -->
-  <text x="128" y="145" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">IPCT</text>
+  <text x="128" y="128" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="central">IPCT</text>
   
 </svg>
