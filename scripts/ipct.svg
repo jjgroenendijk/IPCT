@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22D3EE;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background rounded square -->
+  <rect x="8" y="8" width="240" height="240" rx="40" ry="40" fill="url(#bgGrad)"/>
+  
+  <g fill="none" stroke="url(#arrowGrad)" stroke-width="12" stroke-linecap="round">
+    <!-- Top arc: -135 deg to -55 deg -->
+    <!-- Start: (68, 68). End: (177, 58) -->
+    <path d="M 68 68 A 85 85 0 0 1 177 58"/>
+    
+    <!-- Bottom arc: 45 deg to 125 deg -->
+    <!-- Start: (188, 188). End: (79, 198) -->
+    <path d="M 188 188 A 85 85 0 0 1 79 198"/>
+  </g>
+
+  <!-- Arrow Heads (Filled) -->
+  <g fill="url(#arrowGrad)" stroke="none">
+    <!-- Top Arrow Head: At -45 deg (188, 68). Rotation 45 deg -->
+    <g transform="translate(188, 68) rotate(45)">
+        <!-- Polygon tip at 0,0. Base slightly adjusted to be robust -->
+        <polygon points="0,0 -22,-13 -16,0 -22,13"/> 
+    </g>
+
+    <!-- Bottom Arrow Head: At 135 deg (68, 188). Rotation 225 deg -->
+    <g transform="translate(68, 188) rotate(225)">
+        <polygon points="0,0 -22,-13 -16,0 -22,13"/> 
+    </g>
+  </g>
+  
+  <!-- IP letters -->
+  <text x="128" y="145" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle" dominant-baseline="middle">IPCT</text>
+  
+</svg>
