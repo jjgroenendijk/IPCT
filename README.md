@@ -81,7 +81,3 @@ To test without installing the MSI:
     - Navigate to `src/IpChanger.UI`.
     - Run: `dotnet run`
     - The UI will launch and should connect to the running service instance.
-
-## Author
-
-Developed by [jjgroenendijk.nl](https://jjgroenendijk.nl)
