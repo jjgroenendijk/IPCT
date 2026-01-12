@@ -23,6 +23,7 @@ public partial class MainForm : Form
     private ToolStripStatusLabel lblVersion;
     private ToolTip toolTip;
     private System.Windows.Forms.Timer timerStatus;
+    private CheckBox chkPhysicalOnly;
 
     public MainForm()
     {
@@ -61,11 +62,14 @@ public partial class MainForm : Form
         cmbAdapters.Items.Clear();
         foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
         {
-            if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet || 
-                nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+            // Filter by physical adapter types when checkbox is checked (or during initial load)
+            if (chkPhysicalOnly?.Checked != false)
             {
-                cmbAdapters.Items.Add(new AdapterItem(nic));
+                if (nic.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
+                    nic.NetworkInterfaceType != NetworkInterfaceType.Wireless80211)
+                    continue;
             }
+            cmbAdapters.Items.Add(new AdapterItem(nic));
         }
         if (cmbAdapters.Items.Count > 0) cmbAdapters.SelectedIndex = 0;
     }
@@ -269,7 +273,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "IPCT - IP Change Tool";
-        this.Size = new Size(400, 440);
+        this.Size = new Size(400, 460);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
 
@@ -293,9 +297,13 @@ public partial class MainForm : Form
         cmbAdapters.SelectedIndexChanged += cmbAdapters_SelectedIndexChanged;
 
         // Refresh button next to adapter dropdown
-        btnRefresh = new Button { Text = "\u21BB", Location = new Point(330, y - 1), Size = new Size(30, 24) };
+        btnRefresh = new Button { Text = "Refresh", Location = new Point(330, y - 1), Size = new Size(60, 24) };
         btnRefresh.Click += (s, e) => LoadAdapters();
-        y += 40;
+        y += 30;
+
+        chkPhysicalOnly = new CheckBox { Text = "Physical Adapters Only", Location = new Point(120, y), Size = new Size(200, h), Checked = true };
+        chkPhysicalOnly.CheckedChanged += (s, e) => LoadAdapters();
+        y += 30;
 
         chkDhcp = new CheckBox { Text = "Obtain IP Automatically (DHCP)", Location = new Point(120, y), Size = new Size(240, h) };
         chkDhcp.CheckedChanged += chkDhcp_CheckedChanged;
@@ -346,10 +354,11 @@ public partial class MainForm : Form
         toolTip.SetToolTip(txtSubnet, "Enter subnet mask (e.g., 255.255.255.0)");
         toolTip.SetToolTip(txtGateway, "Enter gateway address (optional)");
         toolTip.SetToolTip(txtDns, "Enter DNS servers, comma-separated (e.g., 8.8.8.8, 8.8.4.4)");
+        toolTip.SetToolTip(chkPhysicalOnly, "Show only physical network adapters (Ethernet and Wi-Fi)");
         toolTip.SetToolTip(chkDhcp, "Enable to obtain IP address automatically from DHCP server");
         toolTip.SetToolTip(btnRefresh, "Refresh adapter list");
         toolTip.SetToolTip(btnCopy, "Copy current configuration to clipboard");
 
-        this.Controls.AddRange(new Control[] { lblAdapter, cmbAdapters, btnRefresh, chkDhcp, lblIp, txtIp, lblSubnet, txtSubnet, lblGateway, txtGateway, lblDns, txtDns, btnApply, btnCopy, lblStatus, statusStrip });
+        this.Controls.AddRange(new Control[] { lblAdapter, cmbAdapters, btnRefresh, chkPhysicalOnly, chkDhcp, lblIp, txtIp, lblSubnet, txtSubnet, lblGateway, txtGateway, lblDns, txtDns, btnApply, btnCopy, lblStatus, statusStrip });
     }
 }

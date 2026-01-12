@@ -9,7 +9,7 @@ public static class IpHelper
     {
         try
         {
-            using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_NetworkAdapterConfiguration WHERE IPEnabled = TRUE");
+            using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_NetworkAdapterConfiguration");
             using var collection = searcher.Get();
 
             foreach (ManagementObject obj in collection)
