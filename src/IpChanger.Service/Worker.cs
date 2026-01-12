@@ -24,10 +24,16 @@ public class Worker : BackgroundService
         {
             try
             {
-                // Create pipe with security settings to allow clients to connect
+                // Create pipe with security settings
                 var pipeSecurity = new PipeSecurity();
-                var id = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
-                pipeSecurity.AddAccessRule(new PipeAccessRule(id, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+
+                // Grant LocalSystem (the service account) full control to create and manage the pipe
+                var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+                pipeSecurity.AddAccessRule(new PipeAccessRule(systemSid, PipeAccessRights.FullControl, AccessControlType.Allow));
+
+                // Grant authenticated users read/write access to connect as clients
+                var usersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
+                pipeSecurity.AddAccessRule(new PipeAccessRule(usersSid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
 
                 // Don't use 'await using' here - let ProcessConnectionAsync own the disposal
                 var serverStream = NamedPipeServerStreamAcl.Create(
@@ -97,7 +103,7 @@ public class Worker : BackgroundService
             catch (Exception ex)
             {
                 // Log error but don't crash the service
-                // _logger.LogError(ex, "Error processing client request.");
+                _logger.LogError(ex, "Error processing client request.");
             }
         }
     }

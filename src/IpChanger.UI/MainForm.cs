@@ -124,12 +124,71 @@ public partial class MainForm : Form
         txtDns.Enabled = !chkDhcp.Checked;
     }
 
+    private void cmbAdapters_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (cmbAdapters.SelectedItem is AdapterItem item)
+            LoadAdapterConfig(item);
+    }
+
+    private void LoadAdapterConfig(AdapterItem item)
+    {
+        try
+        {
+            var nic = item.Nic;
+            var ipProps = nic.GetIPProperties();
+
+            // Get IPv4 address and subnet mask
+            var ipv4Address = ipProps.UnicastAddresses
+                .FirstOrDefault(addr => addr.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+
+            if (ipv4Address != null)
+            {
+                txtIp.Text = ipv4Address.Address.ToString();
+                txtSubnet.Text = ipv4Address.IPv4Mask?.ToString() ?? "255.255.255.0";
+            }
+            else
+            {
+                txtIp.Text = string.Empty;
+                txtSubnet.Text = "255.255.255.0";
+            }
+
+            // Get gateway
+            var gateway = ipProps.GatewayAddresses
+                .FirstOrDefault(gw => gw.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+            txtGateway.Text = gateway?.Address.ToString() ?? string.Empty;
+
+            // Get DNS servers
+            var dnsServers = ipProps.DnsAddresses
+                .Where(dns => dns.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                .Select(dns => dns.ToString());
+            txtDns.Text = string.Join(",", dnsServers);
+
+            // Check DHCP status
+            try
+            {
+                var ipv4Props = ipProps.GetIPv4Properties();
+                chkDhcp.Checked = ipv4Props.IsDhcpEnabled;
+            }
+            catch
+            {
+                // Some adapters may not support IPv4 properties
+                chkDhcp.Checked = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            lblStatus.Text = $"Error loading config: {ex.Message}";
+        }
+    }
+
     private class AdapterItem
     {
         public string Name { get; }
         public string Id { get; }
+        public NetworkInterface Nic { get; }
         public AdapterItem(NetworkInterface nic)
         {
+            Nic = nic;
             Name = $"{nic.Name} ({nic.Description})";
             Id = nic.Id;
         }
@@ -150,6 +209,7 @@ public partial class MainForm : Form
 
         var lblAdapter = new Label { Text = "Adapter:", Location = new Point(20, y), Size = new Size(lblW, h) };
         cmbAdapters = new ComboBox { Location = new Point(120, y), Size = new Size(240, h), DropDownStyle = ComboBoxStyle.DropDownList };
+        cmbAdapters.SelectedIndexChanged += cmbAdapters_SelectedIndexChanged;
         y += 40;
 
         chkDhcp = new CheckBox { Text = "Obtain IP Automatically (DHCP)", Location = new Point(120, y), Size = new Size(240, h) };
@@ -161,7 +221,7 @@ public partial class MainForm : Form
         y += 35;
 
         var lblSubnet = new Label { Text = "Subnet Mask:", Location = new Point(20, y), Size = new Size(lblW, h) };
-        txtSubnet = new TextBox { Text = "255.255.255.0", Location = new Point(120, y), Size = new Size(txtW, h) };
+        txtSubnet = new TextBox { Location = new Point(120, y), Size = new Size(txtW, h) };
         y += 35;
 
         var lblGateway = new Label { Text = "Gateway:", Location = new Point(20, y), Size = new Size(lblW, h) };
@@ -169,7 +229,7 @@ public partial class MainForm : Form
         y += 35;
 
         var lblDns = new Label { Text = "DNS:", Location = new Point(20, y), Size = new Size(lblW, h) };
-        txtDns = new TextBox { Text = "8.8.8.8", Location = new Point(120, y), Size = new Size(txtW, h) };
+        txtDns = new TextBox { Location = new Point(120, y), Size = new Size(txtW, h) };
         y += 45;
 
         btnApply = new Button { Text = "Apply Settings", Location = new Point(120, y), Size = new Size(120, 40) };
