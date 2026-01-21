@@ -1,7 +1,7 @@
 # Feature: Autonomous GitHub Issue Creation by Jules
 
 ## Context
-We want to enable Jules (our AI Agent) to proactively identify tasks, bugs, or improvements in the codebase and create GitHub issues for them *autonomously*, without needing to create a Pull Request first. The current Jules API defaults to creating PRs (`AUTO_CREATE_PR`), so we need a hybrid approach to support Issue creation.
+We want to enable Jules (our AI Agent) to proactively identify tasks, bugs, or improvements in the codebase and create GitHub issues for them *autonomously*, without creating a Pull Request. While Jules is often associated with automated PRs, the API allows us to disable this behavior (it is off by default), enabling us to use Jules purely as an analysis engine.
 
 ## Proposed Architecture
 
@@ -16,8 +16,8 @@ We will implement a **"Think-Then-Act"** workflow using GitHub Actions.
 1.  **Trigger:** The workflow runs on a **Schedule** (e.g., nightly) or **Manual Dispatch**.
 2.  **Scan & Analyze (Jules API):**
     *   The Action sends a request to the Jules API to create a new session.
-    *   **Prompt:** "Analyze the `src/` directory for [Specific Criteria: e.g., missing error handling, TODOs, security risks]. Identify the top 3 most critical findings. Output them as a JSON list with 'title' and 'body' fields. Do NOT create a PR."
-    *   **Automation Mode:** We leave this default (or explicitly *not* `AUTO_CREATE_PR` if possible) so Jules returns the text/JSON response in the Activity stream.
+    *   **Prompt:** "Analyze the `src/` directory for [Specific Criteria]. Identify the top 3 most critical findings. Return a pure JSON list where each item has a 'title' (short summary) and 'body' (detailed description suitable for a GitHub Issue). Do not include any other text."
+    *   **Automation Mode:** We explicitly **omit** the `automationMode` field (or ensure it is NOT set to `AUTO_CREATE_PR`). This guarantees that Jules will *only* generate the plan/analysis and will **not** attempt to create a Pull Request.
 3.  **Parse Output:**
     *   The Action script (bash/powershell) parses the JSON response from the Jules Activity.
 4.  **Create Issues:**
