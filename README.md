@@ -5,6 +5,7 @@ A secure Windows utility that allows standard (non-admin) users to change IP add
 ## Overview
 
 Changing network settings normally requires Administrator privileges. This tool solves that by splitting the application into two parts:
+
 1.  **Background Service**: Runs as `LocalSystem` (high privilege) and handles the actual WMI calls to change network settings.
 2.  **User Interface**: Runs as the logged-in user (standard privilege) and sends requests to the service via a secure Named Pipe.
 
@@ -13,32 +14,32 @@ Changing network settings normally requires Administrator privileges. This tool 
 ### Projects
 
 - **`src/IpChanger.Common`**
-    - Shared library containing the data models (`IpConfigRequest`, `IpConfigResponse`) used for communication between the UI and Service.
+  - Shared library containing the data models (`IpConfigRequest`, `IpConfigResponse`) used for communication between the UI and Service.
 
 - **`src/IpChanger.Service`**
-    - A Windows Service (`Microsoft.Extensions.Hosting.WindowsServices`) that runs in the background.
-    - Listens on a Named Pipe (`IpChangerPipe`) secured to allow Read/Write access to Authenticated Users.
-    - Uses WMI (`Win32_NetworkAdapterConfiguration`) to apply IP configurations.
-    - Logs activities to the Windows Event Log.
+  - A Windows Service (`Microsoft.Extensions.Hosting.WindowsServices`) that runs in the background.
+  - Listens on a Named Pipe (`IpChangerPipe`) secured to allow Read/Write access to Authenticated Users.
+  - Uses WMI (`Win32_NetworkAdapterConfiguration`) to apply IP configurations.
+  - Logs activities to the Windows Event Log.
 
 - **`src/IpChanger.UI`**
-    - A Windows Forms application for user interaction.
-    - Lists available Ethernet and Wireless adapters.
-    - Provides a form to set Static IP or enable DHCP.
-    - Connects to the Service's Named Pipe to send configuration commands.
-    - Includes a status indicator to show connectivity with the background service.
+  - A Windows Forms application for user interaction.
+  - Lists available Ethernet and Wireless adapters.
+  - Provides a form to set Static IP or enable DHCP.
+  - Connects to the Service's Named Pipe to send configuration commands.
+  - Includes a status indicator to show connectivity with the background service.
 
 - **`installer/IpChanger.Installer`**
-    - A WiX Toolset v4 project.
-    - Packages the Service and UI into a single `.msi` installer.
-    - Handles the installation and starting of the Windows Service.
+  - A WiX Toolset v4 project.
+  - Packages the Service and UI into a single `.msi` installer.
+  - Handles the installation and starting of the Windows Service.
 
 ## Prerequisites
 
 - **Operating System**: Windows 10/11 or Server (x64).
 - **Build Tools**:
-    - .NET 8.0 SDK
-    - WiX Toolset v4 (Install via: `dotnet tool install --global wix`)
+  - .NET 8.0 SDK
+  - WiX Toolset v4 (Install via: `dotnet tool install --global wix`)
 
 ## Building the Project
 
@@ -58,7 +59,7 @@ The project includes a PowerShell script to automate the build process.
 
 ## Installation & Usage
 
-1.  **Install**: Run the `IPCTInstaller.msi`. You will need Administrator privileges *once* to install the service.
+1.  **Install**: Run the `IPCTInstaller.msi`. You will need Administrator privileges _once_ to install the service.
 2.  **Run**: Launch **"IPCT"** from the Start Menu.
 3.  **Configure**:
     - Select a Network Adapter from the dropdown.
