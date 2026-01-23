@@ -1,8 +1,9 @@
 <Project Sdk="WixToolset.Sdk/4.0.0">
+  <Import Project="../Directory.Build.props" />
   <PropertyGroup>
     <OutputName>IPCTInstaller</OutputName>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
-    <DefineConstants>ServiceSourceDir=$(ServiceSourceDir);UISourceDir=$(UISourceDir)</DefineConstants>
+    <DefineConstants>ServiceSourceDir=$(ServiceSourceDir);UISourceDir=$(UISourceDir);MsiVersion=$(MsiVersion)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.UI.wixext" Version="4.0.0" />

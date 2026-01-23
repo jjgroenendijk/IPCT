@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="IPCT" Manufacturer="jjgroenendijk.nl" Version="1.0.0.0" UpgradeCode="12345678-1234-1234-1234-123456789012" InstallerVersion="500">
+  <Package Name="IPCT" Manufacturer="jjgroenendijk.nl" Version="$(var.MsiVersion)" UpgradeCode="12345678-1234-1234-1234-123456789012" InstallerVersion="500">
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
 
     <MediaTemplate EmbedCab="yes" />

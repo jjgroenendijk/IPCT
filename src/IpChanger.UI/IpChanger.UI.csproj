@@ -16,8 +16,7 @@
     <Company>jjgroenendijk.nl</Company>
     <Description>IP Change Tool - Allows non-admin users to change network settings</Description>
 
-    <!-- Version info - SourceRevisionId is passed from build script -->
-    <Version>1.0.0</Version>
+    <!-- Version inherited from Directory.Build.props, SourceRevisionId passed from build script -->
     <SourceRevisionId Condition="'$(SourceRevisionId)' == ''">dev</SourceRevisionId>
   </PropertyGroup>
 

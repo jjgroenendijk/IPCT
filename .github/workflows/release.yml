@@ -34,7 +34,7 @@ jobs:
       - name: Build and Package
         run: |
           $buildDate = (Get-Date).ToString("yyyy-MM-dd")
-          .\build.ps1 -Arch ${{ matrix.arch }} -BuildDate $buildDate
+          .\build.ps1 -Arch ${{ matrix.arch }} -BuildDate $buildDate -BuildNumber ${{ github.run_number }}
 
       - name: Rename MSI
         run: |
@@ -65,6 +65,6 @@ jobs:
       - name: Publish Build Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Build ${{ github.run_number }}
+          tag_name: v1.0.${{ github.run_number }}
+          name: IPCT v1.0.${{ github.run_number }}
           files: release_files/*.msi

@@ -1,6 +1,7 @@
 param (
     [string]$Arch = "x64",
-    [string]$BuildDate = ""
+    [string]$BuildDate = "",
+    [string]$BuildNumber = "0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,15 +12,15 @@ if ([string]::IsNullOrEmpty($BuildDate)) {
     $BuildDate = (Get-Date).ToString("yyyy-MM-dd")
 }
 
-Write-Host "Building IPCT Solution for $Arch (Build: $BuildDate)..."
+Write-Host "Building IPCT Solution for $Arch (Build: $BuildDate, Version: 1.0.$BuildNumber)..."
 
 # 1. Publish Service (Single File, Self Contained)
 Write-Host "Publishing Service..."
-dotnet publish src/IpChanger.Service/IpChanger.Service.csproj -c Release -r $Runtime --self-contained /p:PublishSingleFile=true
+dotnet publish src/IpChanger.Service/IpChanger.Service.csproj -c Release -r $Runtime --self-contained /p:PublishSingleFile=true /p:BuildNumber=$BuildNumber
 
 # 2. Publish UI (Single File, Self Contained)
 Write-Host "Publishing UI..."
-dotnet publish src/IpChanger.UI/IpChanger.UI.csproj -c Release -r $Runtime --self-contained /p:PublishSingleFile=true /p:SourceRevisionId=$BuildDate
+dotnet publish src/IpChanger.UI/IpChanger.UI.csproj -c Release -r $Runtime --self-contained /p:PublishSingleFile=true /p:SourceRevisionId=$BuildDate /p:BuildNumber=$BuildNumber
 
 # Define paths for WiX (needs to be passed to the project)
 # Use absolute paths to avoid confusion
@@ -29,9 +30,9 @@ $UIDir = Convert-Path "src\IpChanger.UI\bin\Release\net8.0-windows\$Runtime\publ
 # 3. Build Installer
 # Ensure WiX is installed: dotnet tool install --global wix
 Write-Host "Building MSI for $Arch..."
-# Note: Output path needs to be specific per arch if running in parallel or sequentially to avoid overwrite, 
+# Note: Output path needs to be specific per arch if running in parallel or sequentially to avoid overwrite,
 # but for now we let it build to default bin/Arch/Release
-dotnet build installer/IpChanger.Installer.wixproj -c Release /p:Platform=$Arch /p:ServiceSourceDir="$ServiceDir" /p:UISourceDir="$UIDir"
+dotnet build installer/IpChanger.Installer.wixproj -c Release /p:Platform=$Arch /p:ServiceSourceDir="$ServiceDir" /p:UISourceDir="$UIDir" /p:BuildNumber=$BuildNumber
 
 # 4. Set permissions on MSI file to allow all users to read
 # The output path depends on the platform.
