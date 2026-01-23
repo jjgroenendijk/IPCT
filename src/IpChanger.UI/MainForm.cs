@@ -9,23 +9,23 @@ namespace IpChanger.UI;
 
 public partial class MainForm : Form
 {
-    private ComboBox cmbAdapters;
-    private CheckBox chkDhcp;
-    private IpAddressControl ipAddressControl;
-    private IpAddressControl subnetMaskControl;
-    private IpAddressControl gatewayControl;
-    private IpAddressControl primaryDnsControl;
-    private IpAddressControl secondaryDnsControl;
-    private Button btnApply;
-    private Button btnRefresh;
-    private Button btnCopy;
-    private Label lblStatus;
-    private StatusStrip statusStrip;
-    private ToolStripStatusLabel lblServiceStatus;
-    private ToolStripStatusLabel lblVersion;
-    private ToolTip toolTip;
-    private System.Windows.Forms.Timer timerStatus;
-    private CheckBox chkPhysicalOnly;
+    private ComboBox cmbAdapters = null!;
+    private CheckBox chkDhcp = null!;
+    private IpAddressControl ipAddressControl = null!;
+    private IpAddressControl subnetMaskControl = null!;
+    private IpAddressControl gatewayControl = null!;
+    private IpAddressControl primaryDnsControl = null!;
+    private IpAddressControl secondaryDnsControl = null!;
+    private Button btnApply = null!;
+    private Button btnRefresh = null!;
+    private Button btnCopy = null!;
+    private Label lblStatus = null!;
+    private StatusStrip statusStrip = null!;
+    private ToolStripStatusLabel lblServiceStatus = null!;
+    private ToolStripStatusLabel lblVersion = null!;
+    private ToolTip toolTip = null!;
+    private System.Windows.Forms.Timer timerStatus = null!;
+    private CheckBox chkPhysicalOnly = null!;
 
     public MainForm()
     {
@@ -131,7 +131,7 @@ public partial class MainForm : Form
         return string.Join(",", dns);
     }
 
-    private void btnApply_Click(object sender, EventArgs e)
+    private void btnApply_Click(object? sender, EventArgs e)
     {
         if (cmbAdapters.SelectedItem is not AdapterItem selected) return;
 
@@ -188,7 +188,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void chkDhcp_CheckedChanged(object sender, EventArgs e)
+    private void chkDhcp_CheckedChanged(object? sender, EventArgs e)
     {
         bool enabled = !chkDhcp.Checked;
         ipAddressControl.Enabled = enabled;
@@ -198,7 +198,7 @@ public partial class MainForm : Form
         secondaryDnsControl.Enabled = enabled;
     }
 
-    private void cmbAdapters_SelectedIndexChanged(object sender, EventArgs e)
+    private void cmbAdapters_SelectedIndexChanged(object? sender, EventArgs e)
     {
         if (cmbAdapters.SelectedItem is AdapterItem item)
             LoadAdapterConfig(item);
@@ -258,7 +258,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void btnCopy_Click(object sender, EventArgs e)
+    private void btnCopy_Click(object? sender, EventArgs e)
     {
         var adapter = cmbAdapters.SelectedItem as AdapterItem;
         var dnsText = BuildDnsString();

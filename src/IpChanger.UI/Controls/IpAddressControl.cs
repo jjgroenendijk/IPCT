@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace IpChanger.UI.Controls;
 
 public class IpAddressControl : UserControl
@@ -81,6 +83,7 @@ public class IpAddressControl : UserControl
         set => _allowEmpty = value;
     }
 
+    [AllowNull]
     public override string Text
     {
         get
