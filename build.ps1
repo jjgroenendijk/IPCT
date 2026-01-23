@@ -24,7 +24,7 @@ dotnet publish src/IpChanger.UI/IpChanger.UI.csproj -c Release -r $Runtime --sel
 
 # Define paths for WiX (needs to be passed to the project)
 # Use absolute paths to avoid confusion
-$ServiceDir = Convert-Path "src\IpChanger.Service\bin\Release\net8.0\$Runtime\publish"
+$ServiceDir = Convert-Path "src\IpChanger.Service\bin\Release\net8.0-windows\$Runtime\publish"
 $UIDir = Convert-Path "src\IpChanger.UI\bin\Release\net8.0-windows\$Runtime\publish"
 
 # 3. Build Installer
