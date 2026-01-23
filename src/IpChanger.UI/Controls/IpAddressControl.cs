@@ -11,23 +11,30 @@ public class IpAddressControl : UserControl
 
     public IpAddressControl()
     {
+        // Set up the control to draw its own border
+        this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+        this.BackColor = SystemColors.Window;
+
         _layout = new TableLayoutPanel
         {
             ColumnCount = 7,
             RowCount = 1,
             Dock = DockStyle.Fill,
-            AutoSize = true,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty
+            AutoSize = false,
+            Margin = new Padding(1), // Leave room for the border
+            Padding = Padding.Empty,
+            BackColor = SystemColors.Window
         };
 
-        // Configure columns: 4 octets + 3 dots
+        // Configure columns: 4 octets (percentage) + 3 dots (fixed)
+        // Total fixed width for dots: 3 * 8 = 24px
+        // Remaining space divided equally among 4 octets
         for (int i = 0; i < 7; i++)
         {
-            if (i % 2 == 0) // Octet columns
-                _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40));
-            else // Dot columns
-                _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 12));
+            if (i % 2 == 0) // Octet columns - use percentage for flexibility
+                _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+            else // Dot columns - fixed narrow width
+                _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 8));
         }
         _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
@@ -46,7 +53,8 @@ public class IpAddressControl : UserControl
                     Dock = DockStyle.Fill,
                     AutoSize = false,
                     Margin = Padding.Empty,
-                    Padding = Padding.Empty
+                    Padding = Padding.Empty,
+                    BackColor = SystemColors.Window
                 };
                 _layout.Controls.Add(_dots[i], i * 2 + 1, 0);
             }
@@ -54,8 +62,31 @@ public class IpAddressControl : UserControl
 
         this.Controls.Add(_layout);
         this.Height = 23;
-        this.MinimumSize = new Size(180, 23);
+        this.MinimumSize = new Size(200, 23);
         this.AutoSize = false;
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        // Draw a single border around the entire control
+        var borderColor = this.Enabled ? SystemColors.ControlDark : SystemColors.ControlLight;
+        using var pen = new Pen(borderColor, 1);
+        e.Graphics.DrawRectangle(pen, 0, 0, this.Width - 1, this.Height - 1);
+    }
+
+    protected override void OnEnabledChanged(EventArgs e)
+    {
+        base.OnEnabledChanged(e);
+        // Update background when enabled state changes
+        var bgColor = this.Enabled ? SystemColors.Window : SystemColors.Control;
+        this.BackColor = bgColor;
+        _layout.BackColor = bgColor;
+        foreach (var dot in _dots)
+        {
+            if (dot != null) dot.BackColor = bgColor;
+        }
+        this.Invalidate(); // Redraw border
     }
 
     private TextBox CreateOctetTextBox(int index)
@@ -65,7 +96,9 @@ public class IpAddressControl : UserControl
             MaxLength = 3,
             TextAlign = HorizontalAlignment.Center,
             Dock = DockStyle.Fill,
-            Margin = new Padding(1),
+            Margin = Padding.Empty,
+            BorderStyle = BorderStyle.None, // No individual borders - control draws unified border
+            BackColor = SystemColors.Window,
             Tag = index
         };
 
@@ -256,7 +289,8 @@ public class IpAddressControl : UserControl
         bool valid = string.IsNullOrEmpty(txt.Text) ||
                      (int.TryParse(txt.Text, out int val) && val >= 0 && val <= 255);
 
-        txt.BackColor = valid ? SystemColors.Window : Color.MistyRose;
+        var normalColor = this.Enabled ? SystemColors.Window : SystemColors.Control;
+        txt.BackColor = valid ? normalColor : Color.MistyRose;
     }
 
     private void HandlePaste()

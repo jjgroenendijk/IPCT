@@ -291,8 +291,8 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "IPCT - IP Change Tool";
-        this.Size = new Size(450, 550);
-        this.MinimumSize = new Size(420, 520);
+        this.Size = new Size(420, 400);
+        this.MinimumSize = new Size(400, 380);
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.MaximizeBox = true;
 
@@ -311,8 +311,8 @@ public partial class MainForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 11,
-            Padding = new Padding(15),
+            RowCount = 10,
+            Padding = new Padding(15, 10, 15, 10),
             AutoSize = false
         };
 
@@ -320,18 +320,17 @@ public partial class MainForm : Form
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
         mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        // Configure rows
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // Adapter row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Physical only checkbox
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // DHCP checkbox
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // IP Address
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // Subnet Mask
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // Gateway
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // Primary DNS
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 35)); // Secondary DNS
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Status
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // Fill remaining
+        // Configure rows - no extra fill row at the end
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); // Adapter row
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26)); // Physical only checkbox
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // DHCP checkbox
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // IP Address
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Subnet Mask
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Gateway
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Primary DNS
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Secondary DNS
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // Buttons
+        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 25)); // Status
 
         int row = 0;
 
@@ -406,7 +405,7 @@ public partial class MainForm : Form
         ipAddressControl = new IpAddressControl
         {
             AllowEmpty = false,
-            Anchor = AnchorStyles.Left
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
         mainLayout.Controls.Add(ipAddressControl, 1, row);
         row++;
@@ -424,7 +423,7 @@ public partial class MainForm : Form
         subnetMaskControl = new IpAddressControl
         {
             AllowEmpty = false,
-            Anchor = AnchorStyles.Left
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
         mainLayout.Controls.Add(subnetMaskControl, 1, row);
         row++;
@@ -442,7 +441,7 @@ public partial class MainForm : Form
         gatewayControl = new IpAddressControl
         {
             AllowEmpty = true,
-            Anchor = AnchorStyles.Left
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
         mainLayout.Controls.Add(gatewayControl, 1, row);
         row++;
@@ -460,7 +459,7 @@ public partial class MainForm : Form
         primaryDnsControl = new IpAddressControl
         {
             AllowEmpty = true,
-            Anchor = AnchorStyles.Left
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
         mainLayout.Controls.Add(primaryDnsControl, 1, row);
         row++;
@@ -478,7 +477,7 @@ public partial class MainForm : Form
         secondaryDnsControl = new IpAddressControl
         {
             AllowEmpty = true,
-            Anchor = AnchorStyles.Left
+            Anchor = AnchorStyles.Left | AnchorStyles.Right
         };
         mainLayout.Controls.Add(secondaryDnsControl, 1, row);
         row++;
