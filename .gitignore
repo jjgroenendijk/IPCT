@@ -153,3 +153,4 @@ __pycache__/
 
 *.md 
 !README.md
+!docs/**/*.md
