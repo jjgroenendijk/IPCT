@@ -291,8 +291,8 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "IPCT - IP Change Tool";
-        this.Size = new Size(420, 400);
-        this.MinimumSize = new Size(400, 380);
+        this.Size = new Size(460, 400);
+        this.MinimumSize = new Size(440, 380);
         this.FormBorderStyle = FormBorderStyle.Sizable;
         this.MaximizeBox = true;
 
@@ -344,28 +344,31 @@ public partial class MainForm : Form
         };
         mainLayout.Controls.Add(lblAdapter, 0, row);
 
-        var adapterPanel = new FlowLayoutPanel
+        var adapterPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
+            ColumnCount = 2,
+            RowCount = 1,
             Margin = Padding.Empty,
-            AutoSize = false
+            Padding = Padding.Empty
         };
+        adapterPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // ComboBox fills available space
+        adapterPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));  // Button fixed width
+        adapterPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         cmbAdapters = new ComboBox
         {
-            Width = 220,
+            Dock = DockStyle.Fill,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
+            Margin = new Padding(0, 0, 5, 0)
         };
         cmbAdapters.SelectedIndexChanged += cmbAdapters_SelectedIndexChanged;
 
-        btnRefresh = new Button { Text = "Refresh", Width = 65, Height = 25 };
+        btnRefresh = new Button { Text = "Refresh", Dock = DockStyle.Fill };
         btnRefresh.Click += (s, e) => LoadAdapters();
 
-        adapterPanel.Controls.Add(cmbAdapters);
-        adapterPanel.Controls.Add(btnRefresh);
+        adapterPanel.Controls.Add(cmbAdapters, 0, 0);
+        adapterPanel.Controls.Add(btnRefresh, 1, 0);
         mainLayout.Controls.Add(adapterPanel, 1, row);
         row++;
 
