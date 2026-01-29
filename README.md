@@ -1,5 +1,7 @@
 # IPCT (IP Change Tool)
 
+![alt text](preview.png)
+
 A secure Windows utility that allows standard (non-admin) users to change IP addresses, Subnet Masks, Gateways, and DNS settings of network adapters.
 
 ## Overview
