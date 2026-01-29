@@ -83,7 +83,15 @@ $existingPackage = Get-Package -Name "IPCT" -ErrorAction SilentlyContinue
 if ($existingPackage) {
     Write-Host "  Found existing IPCT installation. Uninstalling..." -ForegroundColor Yellow
     
-    # Stop the service first if it's running
+    # Stop the UI application if it's running
+    $uiProcess = Get-Process -Name "IpChanger.UI" -ErrorAction SilentlyContinue
+    if ($uiProcess) {
+        Write-Host "  Stopping IpChanger.UI..." -ForegroundColor Yellow
+        Stop-Process -Name "IpChanger.UI" -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 1
+    }
+    
+    # Stop the service if it's running
     $service = Get-Service -Name "IpChangerService" -ErrorAction SilentlyContinue
     if ($service) {
         if ($service.Status -eq "Running") {
@@ -124,6 +132,14 @@ if ($existingPackage) {
     
     if ($ipctProduct) {
         Write-Host "  Found IPCT in registry. Uninstalling..." -ForegroundColor Yellow
+        
+        # Stop the UI application if it's running
+        $uiProcess = Get-Process -Name "IpChanger.UI" -ErrorAction SilentlyContinue
+        if ($uiProcess) {
+            Write-Host "  Stopping IpChanger.UI..." -ForegroundColor Yellow
+            Stop-Process -Name "IpChanger.UI" -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 1
+        }
         
         # Stop the service first
         $service = Get-Service -Name "IpChangerService" -ErrorAction SilentlyContinue
@@ -249,6 +265,12 @@ if ($success) {
     Write-Host "========================================" -ForegroundColor Green
     Write-Host "IPCT installation completed successfully!" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Green
+    
+    # Launch the UI application
+    Write-Host ""
+    Write-Host "Launching IpChanger.UI..." -ForegroundColor Yellow
+    Start-Process -FilePath $uiExe
+    Write-Host "  UI started." -ForegroundColor Green
 } else {
     Write-Host "========================================" -ForegroundColor Red
     Write-Host "IPCT installation completed with errors." -ForegroundColor Red

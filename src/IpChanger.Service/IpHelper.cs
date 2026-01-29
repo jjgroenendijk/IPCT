@@ -1,17 +1,53 @@
 using IpChanger.Common;
 using System.Management;
+using System.Net;
 
 namespace IpChanger.Service;
 
 public static class IpHelper
 {
+    private static bool IsValidIpAddress(string? ip)
+    {
+        if (string.IsNullOrWhiteSpace(ip)) return false;
+        return IPAddress.TryParse(ip, out var parsed) && 
+               parsed.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
+    }
+
     public static IpConfigResponse ApplyConfig(IpConfigRequest request)
     {
         try
         {
             if (string.IsNullOrEmpty(request.AdapterId))
             {
-                return new IpConfigResponse { Success = false, Message = "Adapter not found." };
+                return new IpConfigResponse(false, "Adapter not found.");
+            }
+
+            // Server-side validation for static IP configuration
+            if (!request.UseDhcp)
+            {
+                if (!IsValidIpAddress(request.IpAddress))
+                {
+                    return new IpConfigResponse(false, "Invalid IP Address format.");
+                }
+                if (!IsValidIpAddress(request.SubnetMask))
+                {
+                    return new IpConfigResponse(false, "Invalid Subnet Mask format.");
+                }
+                if (!string.IsNullOrWhiteSpace(request.Gateway) && !IsValidIpAddress(request.Gateway))
+                {
+                    return new IpConfigResponse(false, "Invalid Gateway address format.");
+                }
+                if (!string.IsNullOrWhiteSpace(request.Dns))
+                {
+                    var dnsServers = request.Dns.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var dns in dnsServers)
+                    {
+                        if (!IsValidIpAddress(dns.Trim()))
+                        {
+                            return new IpConfigResponse(false, $"Invalid DNS server format: {dns.Trim()}");
+                        }
+                    }
+                }
             }
 
             // WMI Optimization: Filter by SettingID at the source
@@ -26,7 +62,7 @@ public static class IpHelper
                 {
                     obj.InvokeMethod("EnableDHCP", null);
                     obj.InvokeMethod("SetDNSServerSearchOrder", null); // Clear DNS
-                    return new IpConfigResponse { Success = true, Message = "DHCP Enabled" };
+                    return new IpConfigResponse(true, "DHCP Enabled");
                 }
                 else
                 {
@@ -53,14 +89,14 @@ public static class IpHelper
                         obj.InvokeMethod("SetDNSServerSearchOrder", newDns, null);
                     }
 
-                    return new IpConfigResponse { Success = true, Message = "Static IP configured successfully." };
+                    return new IpConfigResponse(true, "Static IP configured successfully.");
                 }
             }
-            return new IpConfigResponse { Success = false, Message = "Adapter not found." };
+            return new IpConfigResponse(false, "Adapter not found.");
         }
         catch (Exception ex)
         {
-            return new IpConfigResponse { Success = false, Message = ex.Message };
+            return new IpConfigResponse(false, ex.Message);
         }
     }
 }

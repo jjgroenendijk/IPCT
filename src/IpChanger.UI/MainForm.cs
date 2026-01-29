@@ -1,6 +1,5 @@
 using System.Net.NetworkInformation;
 using System.IO.Pipes;
-using System.Reflection;
 using System.Text.Json;
 using IpChanger.Common;
 using IpChanger.UI.Controls;
@@ -9,6 +8,8 @@ namespace IpChanger.UI;
 
 public partial class MainForm : Form
 {
+    private const string EmptyIpPlaceholder = "...";
+    
     private ComboBox cmbAdapters = null!;
     private CheckBox chkDhcp = null!;
     private IpAddressControl ipAddressControl = null!;
@@ -19,13 +20,17 @@ public partial class MainForm : Form
     private Button btnApply = null!;
     private Button btnRefresh = null!;
     private Button btnCopy = null!;
-    private Label lblStatus = null!;
+    private Button btnClear = null!;
+    private Label lblMacAddress = null!;
     private StatusStrip statusStrip = null!;
     private ToolStripStatusLabel lblServiceStatus = null!;
     private ToolStripStatusLabel lblVersion = null!;
     private ToolTip toolTip = null!;
+    private string _appStatus = "Ready";
+    private string _serviceStatus = "Checking Service...";
     private System.Windows.Forms.Timer timerStatus = null!;
     private CheckBox chkPhysicalOnly = null!;
+    private TableLayoutPanel mainLayout = null!;
 
     public MainForm()
     {
@@ -49,14 +54,34 @@ public partial class MainForm : Form
             // Try to connect to the service without sending data
             await using var client = new NamedPipeClientStream(".", "IpChangerPipe", PipeDirection.InOut);
             await client.ConnectAsync(500); // Short timeout
-            lblServiceStatus.Text = "Service: Connected";
-            lblServiceStatus.ForeColor = Color.Green;
+            _serviceStatus = "Service: Connected";
+            UpdateCombinedStatus(Color.Green);
         }
         catch
         {
-            lblServiceStatus.Text = "Service: Disconnected";
-            lblServiceStatus.ForeColor = Color.Red;
+            _serviceStatus = "Service: Disconnected";
+            UpdateCombinedStatus(Color.Red);
         }
+    }
+
+    private void UpdateCombinedStatus(Color? serviceColor = null)
+    {
+        lblServiceStatus.Text = $"{_appStatus} | {_serviceStatus}";
+        if (serviceColor.HasValue)
+            lblServiceStatus.ForeColor = serviceColor.Value;
+    }
+
+    private void SetAppStatus(string status)
+    {
+        _appStatus = status;
+        UpdateCombinedStatus();
+    }
+
+    private static string FormatMacAddress(string mac)
+    {
+        if (string.IsNullOrEmpty(mac) || mac.Length != 12)
+            return "N/A";
+        return string.Join("-", Enumerable.Range(0, 6).Select(i => mac.Substring(i * 2, 2)));
     }
 
     private void LoadAdapters()
@@ -76,57 +101,79 @@ public partial class MainForm : Form
         if (cmbAdapters.Items.Count > 0) cmbAdapters.SelectedIndex = 0;
     }
 
+    private static bool IsValidIp(IpAddressControl ctrl, bool required) =>
+        ctrl.IsValid && (!required || (!string.IsNullOrWhiteSpace(ctrl.Text) && ctrl.Text != EmptyIpPlaceholder));
+
+    private void ClearAllValidationErrors()
+    {
+        ipAddressControl.BackColor = SystemColors.Window;
+        subnetMaskControl.BackColor = SystemColors.Window;
+        gatewayControl.BackColor = SystemColors.Window;
+        primaryDnsControl.BackColor = SystemColors.Window;
+        secondaryDnsControl.BackColor = SystemColors.Window;
+        cmbAdapters.BackColor = SystemColors.Window;
+    }
+
+    private void HighlightError(Control control)
+    {
+        control.BackColor = Color.MistyRose;
+        control.Focus();
+    }
+
     private bool ValidateInputs(out string errorMessage)
     {
         errorMessage = "";
+        ClearAllValidationErrors();
 
-        if (!chkDhcp.Checked)
+        // Validate adapter selection
+        if (cmbAdapters.SelectedItem is not AdapterItem)
         {
-            // Validate IP Address
-            if (!ipAddressControl.IsValid || string.IsNullOrWhiteSpace(ipAddressControl.Text) || ipAddressControl.Text == "...")
-            {
-                errorMessage = "Invalid IP address format.";
-                return false;
-            }
-
-            // Validate Subnet Mask
-            if (!subnetMaskControl.IsValid || string.IsNullOrWhiteSpace(subnetMaskControl.Text) || subnetMaskControl.Text == "...")
-            {
-                errorMessage = "Invalid subnet mask format.";
-                return false;
-            }
-
-            // Validate Gateway (optional)
-            if (!gatewayControl.IsValid)
-            {
-                errorMessage = "Invalid gateway address format.";
-                return false;
-            }
-
-            // Validate Primary DNS (optional)
-            if (!primaryDnsControl.IsValid)
-            {
-                errorMessage = "Invalid primary DNS server format.";
-                return false;
-            }
-
-            // Validate Secondary DNS (optional)
-            if (!secondaryDnsControl.IsValid)
-            {
-                errorMessage = "Invalid secondary DNS server format.";
-                return false;
-            }
+            errorMessage = "Please select a network adapter.";
+            HighlightError(cmbAdapters);
+            return false;
         }
 
+        if (chkDhcp.Checked) return true;
+
+        if (!IsValidIp(ipAddressControl, true))
+        {
+            errorMessage = "IP Address is required and must be a valid format (e.g., 192.168.1.100).";
+            HighlightError(ipAddressControl);
+            return false;
+        }
+        if (!IsValidIp(subnetMaskControl, true))
+        {
+            errorMessage = "Subnet Mask is required and must be a valid format (e.g., 255.255.255.0).";
+            HighlightError(subnetMaskControl);
+            return false;
+        }
+        if (!IsValidIp(gatewayControl, false))
+        {
+            errorMessage = "Gateway address must be a valid IP format (e.g., 192.168.1.1) or left empty.";
+            HighlightError(gatewayControl);
+            return false;
+        }
+        if (!IsValidIp(primaryDnsControl, false))
+        {
+            errorMessage = "Primary DNS must be a valid IP format (e.g., 8.8.8.8) or left empty.";
+            HighlightError(primaryDnsControl);
+            return false;
+        }
+        if (!IsValidIp(secondaryDnsControl, false))
+        {
+            errorMessage = "Secondary DNS must be a valid IP format (e.g., 8.8.4.4) or left empty.";
+            HighlightError(secondaryDnsControl);
+            return false;
+        }
         return true;
     }
 
     private string BuildDnsString()
     {
         var dns = new List<string>();
-        if (!string.IsNullOrWhiteSpace(primaryDnsControl.Text) && primaryDnsControl.Text != "...")
+        if (!string.IsNullOrWhiteSpace(primaryDnsControl.Text) && primaryDnsControl.Text != EmptyIpPlaceholder)
             dns.Add(primaryDnsControl.Text);
-        if (!string.IsNullOrWhiteSpace(secondaryDnsControl.Text) && secondaryDnsControl.Text != "...")
+        if (!string.IsNullOrWhiteSpace(secondaryDnsControl.Text) && secondaryDnsControl.Text != EmptyIpPlaceholder)
             dns.Add(secondaryDnsControl.Text);
         return string.Join(",", dns);
     }
@@ -141,15 +188,14 @@ public partial class MainForm : Form
             return;
         }
 
-        var request = new IpConfigRequest
-        {
-            AdapterId = selected.Id,
-            UseDhcp = chkDhcp.Checked,
-            IpAddress = ipAddressControl.Text,
-            SubnetMask = subnetMaskControl.Text,
-            Gateway = gatewayControl.Text == "..." ? "" : gatewayControl.Text,
-            Dns = BuildDnsString()
-        };
+        var request = new IpConfigRequest(
+            AdapterId: selected.Id,
+            UseDhcp: chkDhcp.Checked,
+            IpAddress: ipAddressControl.Text,
+            SubnetMask: subnetMaskControl.Text,
+            Gateway: gatewayControl.Text == EmptyIpPlaceholder ? "" : gatewayControl.Text,
+            Dns: BuildDnsString()
+        );
 
         ApplySettings(request);
     }
@@ -157,7 +203,7 @@ public partial class MainForm : Form
     private async void ApplySettings(IpConfigRequest request)
     {
         btnApply.Enabled = false;
-        lblStatus.Text = "Connecting to service...";
+        SetAppStatus("Connecting to service...");
         try
         {
             await using var client = new NamedPipeClientStream(".", "IpChangerPipe", PipeDirection.InOut);
@@ -167,19 +213,29 @@ public partial class MainForm : Form
             await using var writer = new StreamWriter(client, leaveOpen: true) { AutoFlush = true };
             using var reader = new StreamReader(client, leaveOpen: true);
 
-            await writer.WriteLineAsync(JsonSerializer.Serialize(request));
+            await writer.WriteLineAsync(JsonSerializer.Serialize(request, IpChangerJsonContext.Default.IpConfigRequest));
 
             var responseJson = await reader.ReadLineAsync();
             if (responseJson != null)
             {
-                var response = JsonSerializer.Deserialize<IpConfigResponse>(responseJson);
-                lblStatus.Text = response?.Message ?? "Unknown response";
-                MessageBox.Show(response?.Message, response?.Success == true ? "Success" : "Error");
+                var response = JsonSerializer.Deserialize(responseJson, IpChangerJsonContext.Default.IpConfigResponse);
+                SetAppStatus(response?.Message ?? "Unknown response");
+                
+                // Only show MessageBox for errors, success is shown in status bar
+                if (response?.Success != true)
+                {
+                    MessageBox.Show(response?.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    // Refresh adapter list to show updated settings
+                    LoadAdapters();
+                }
             }
         }
         catch (Exception ex)
         {
-            lblStatus.Text = "Error: " + ex.Message;
+            SetAppStatus("Error: " + ex.Message);
             MessageBox.Show("Could not connect to service. Is it installed and running?\n" + ex.Message, "Connection Error");
         }
         finally
@@ -196,12 +252,17 @@ public partial class MainForm : Form
         gatewayControl.Enabled = enabled;
         primaryDnsControl.Enabled = enabled;
         secondaryDnsControl.Enabled = enabled;
+        btnClear.Enabled = enabled;
     }
 
     private void cmbAdapters_SelectedIndexChanged(object? sender, EventArgs e)
     {
         if (cmbAdapters.SelectedItem is AdapterItem item)
+        {
             LoadAdapterConfig(item);
+            var mac = item.Nic.GetPhysicalAddress().ToString();
+            lblMacAddress.Text = $"MAC: {FormatMacAddress(mac)}";
+        }
     }
 
     private void LoadAdapterConfig(AdapterItem item)
@@ -254,7 +315,7 @@ public partial class MainForm : Form
         }
         catch (Exception ex)
         {
-            lblStatus.Text = $"Error loading config: {ex.Message}";
+            SetAppStatus($"Error loading config: {ex.Message}");
         }
     }
 
@@ -271,7 +332,17 @@ public partial class MainForm : Form
                      $"Secondary DNS: {secondaryDnsControl.Text}";
 
         Clipboard.SetText(config);
-        lblStatus.Text = "Configuration copied to clipboard.";
+        SetAppStatus("Configuration copied to clipboard.");
+    }
+
+    private void btnClear_Click(object? sender, EventArgs e)
+    {
+        ipAddressControl.Text = string.Empty;
+        subnetMaskControl.Text = string.Empty;
+        gatewayControl.Text = string.Empty;
+        primaryDnsControl.Text = string.Empty;
+        secondaryDnsControl.Text = string.Empty;
+        SetAppStatus("Configuration cleared.");
     }
 
     private class AdapterItem
@@ -286,263 +357,5 @@ public partial class MainForm : Form
             Id = nic.Id;
         }
         public override string ToString() => Name;
-    }
-
-    private void InitializeComponent()
-    {
-        this.Text = "IPCT - IP Change Tool";
-        this.Size = new Size(460, 400);
-        this.MinimumSize = new Size(440, 380);
-        this.FormBorderStyle = FormBorderStyle.Sizable;
-        this.MaximizeBox = true;
-
-        // Set form icon from embedded resource
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "Resources", "IPCT.ico");
-        if (File.Exists(iconPath))
-        {
-            this.Icon = new Icon(iconPath);
-        }
-
-        // Initialize tooltip
-        toolTip = new ToolTip();
-
-        // Main TableLayoutPanel
-        var mainLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 10,
-            Padding = new Padding(15, 10, 15, 10),
-            AutoSize = false
-        };
-
-        // Configure columns: Label (100px) | Control (fill)
-        mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
-        mainLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-        // Configure rows - no extra fill row at the end
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32)); // Adapter row
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26)); // Physical only checkbox
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // DHCP checkbox
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // IP Address
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Subnet Mask
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Gateway
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Primary DNS
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Secondary DNS
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 45)); // Buttons
-        mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 25)); // Status
-
-        int row = 0;
-
-        // Row 0: Adapter
-        var lblAdapter = new Label
-        {
-            Text = "Adapter:",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true,
-            Padding = new Padding(0, 6, 0, 0)
-        };
-        mainLayout.Controls.Add(lblAdapter, 0, row);
-
-        var adapterPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 1,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty
-        };
-        adapterPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); // ComboBox fills available space
-        adapterPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));  // Button fixed width
-        adapterPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        cmbAdapters = new ComboBox
-        {
-            Dock = DockStyle.Fill,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(0, 0, 5, 0)
-        };
-        cmbAdapters.SelectedIndexChanged += cmbAdapters_SelectedIndexChanged;
-
-        btnRefresh = new Button { Text = "Refresh", Dock = DockStyle.Fill };
-        btnRefresh.Click += (s, e) => LoadAdapters();
-
-        adapterPanel.Controls.Add(cmbAdapters, 0, 0);
-        adapterPanel.Controls.Add(btnRefresh, 1, 0);
-        mainLayout.Controls.Add(adapterPanel, 1, row);
-        row++;
-
-        // Row 1: Physical Adapters Only checkbox
-        chkPhysicalOnly = new CheckBox
-        {
-            Text = "Physical Adapters Only",
-            Checked = true,
-            Anchor = AnchorStyles.Left,
-            AutoSize = true
-        };
-        chkPhysicalOnly.CheckedChanged += (s, e) => LoadAdapters();
-        mainLayout.Controls.Add(chkPhysicalOnly, 1, row);
-        row++;
-
-        // Row 2: DHCP checkbox
-        chkDhcp = new CheckBox
-        {
-            Text = "Obtain IP Automatically (DHCP)",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true
-        };
-        chkDhcp.CheckedChanged += chkDhcp_CheckedChanged;
-        mainLayout.Controls.Add(chkDhcp, 1, row);
-        row++;
-
-        // Row 3: IP Address
-        var lblIp = new Label
-        {
-            Text = "IP Address:",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true,
-            Padding = new Padding(0, 4, 0, 0)
-        };
-        mainLayout.Controls.Add(lblIp, 0, row);
-
-        ipAddressControl = new IpAddressControl
-        {
-            AllowEmpty = false,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
-        };
-        mainLayout.Controls.Add(ipAddressControl, 1, row);
-        row++;
-
-        // Row 4: Subnet Mask
-        var lblSubnet = new Label
-        {
-            Text = "Subnet Mask:",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true,
-            Padding = new Padding(0, 4, 0, 0)
-        };
-        mainLayout.Controls.Add(lblSubnet, 0, row);
-
-        subnetMaskControl = new IpAddressControl
-        {
-            AllowEmpty = false,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
-        };
-        mainLayout.Controls.Add(subnetMaskControl, 1, row);
-        row++;
-
-        // Row 5: Gateway
-        var lblGateway = new Label
-        {
-            Text = "Gateway:",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true,
-            Padding = new Padding(0, 4, 0, 0)
-        };
-        mainLayout.Controls.Add(lblGateway, 0, row);
-
-        gatewayControl = new IpAddressControl
-        {
-            AllowEmpty = true,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
-        };
-        mainLayout.Controls.Add(gatewayControl, 1, row);
-        row++;
-
-        // Row 6: Primary DNS
-        var lblPrimaryDns = new Label
-        {
-            Text = "Primary DNS:",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true,
-            Padding = new Padding(0, 4, 0, 0)
-        };
-        mainLayout.Controls.Add(lblPrimaryDns, 0, row);
-
-        primaryDnsControl = new IpAddressControl
-        {
-            AllowEmpty = true,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
-        };
-        mainLayout.Controls.Add(primaryDnsControl, 1, row);
-        row++;
-
-        // Row 7: Secondary DNS
-        var lblSecondaryDns = new Label
-        {
-            Text = "Secondary DNS:",
-            Anchor = AnchorStyles.Left,
-            AutoSize = true,
-            Padding = new Padding(0, 4, 0, 0)
-        };
-        mainLayout.Controls.Add(lblSecondaryDns, 0, row);
-
-        secondaryDnsControl = new IpAddressControl
-        {
-            AllowEmpty = true,
-            Anchor = AnchorStyles.Left | AnchorStyles.Right
-        };
-        mainLayout.Controls.Add(secondaryDnsControl, 1, row);
-        row++;
-
-        // Row 8: Buttons
-        var buttonPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
-            Margin = new Padding(0, 5, 0, 0)
-        };
-
-        btnApply = new Button { Text = "Apply Settings", Width = 110, Height = 35 };
-        btnApply.Click += btnApply_Click;
-
-        btnCopy = new Button { Text = "Copy Config", Width = 100, Height = 35 };
-        btnCopy.Click += btnCopy_Click;
-
-        buttonPanel.Controls.Add(btnApply);
-        buttonPanel.Controls.Add(btnCopy);
-        mainLayout.Controls.Add(buttonPanel, 1, row);
-        row++;
-
-        // Row 9: Status
-        lblStatus = new Label
-        {
-            Text = "Ready",
-            Anchor = AnchorStyles.Left | AnchorStyles.Right,
-            AutoSize = false,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Dock = DockStyle.Fill
-        };
-        mainLayout.SetColumnSpan(lblStatus, 2);
-        mainLayout.Controls.Add(lblStatus, 0, row);
-
-        // Status strip with service status and version
-        statusStrip = new StatusStrip();
-        lblServiceStatus = new ToolStripStatusLabel { Text = "Checking Service..." };
-        lblVersion = new ToolStripStatusLabel { Alignment = ToolStripItemAlignment.Right };
-        statusStrip.Items.Add(lblServiceStatus);
-        statusStrip.Items.Add(new ToolStripStatusLabel { Spring = true }); // Spacer
-        statusStrip.Items.Add(lblVersion);
-
-        // Set version from assembly info
-        var version = Assembly.GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion ?? "Unknown";
-        lblVersion.Text = $"v{version}";
-
-        // Set tooltips
-        toolTip.SetToolTip(ipAddressControl, "Enter IPv4 address (e.g., 192.168.1.100)");
-        toolTip.SetToolTip(subnetMaskControl, "Enter subnet mask (e.g., 255.255.255.0)");
-        toolTip.SetToolTip(gatewayControl, "Enter gateway address (optional)");
-        toolTip.SetToolTip(primaryDnsControl, "Enter primary DNS server (optional)");
-        toolTip.SetToolTip(secondaryDnsControl, "Enter secondary DNS server (optional)");
-        toolTip.SetToolTip(chkPhysicalOnly, "Show only physical network adapters (Ethernet and Wi-Fi)");
-        toolTip.SetToolTip(chkDhcp, "Enable to obtain IP address automatically from DHCP server");
-        toolTip.SetToolTip(btnRefresh, "Refresh adapter list");
-        toolTip.SetToolTip(btnCopy, "Copy current configuration to clipboard");
-
-        this.Controls.Add(mainLayout);
-        this.Controls.Add(statusStrip);
     }
 }

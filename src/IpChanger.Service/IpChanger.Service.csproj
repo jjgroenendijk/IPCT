@@ -6,6 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <OutputType>Exe</OutputType>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    
+    <!-- Memory optimization: Use Workstation GC (lower memory footprint) -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    
+    <!-- Trimming DISABLED: System.Management uses reflection for WMI which is incompatible with IL trimming -->
+    <PublishTrimmed>false</PublishTrimmed>
+    
+    <!-- Disable ReadyToRun for smaller working set -->
+    <PublishReadyToRun>false</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>

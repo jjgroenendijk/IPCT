@@ -78,7 +78,7 @@ public class Worker : BackgroundService
                     IpConfigResponse response;
                     try
                     {
-                        var request = JsonSerializer.Deserialize<IpConfigRequest>(line);
+                        var request = JsonSerializer.Deserialize(line, IpChangerJsonContext.Default.IpConfigRequest);
                         if (request != null)
                         {
                             // _logger.LogInformation($"Processing request for Adapter: {request.AdapterId}");
@@ -86,15 +86,15 @@ public class Worker : BackgroundService
                         }
                         else
                         {
-                            response = new IpConfigResponse { Success = false, Message = "Invalid request format." };
+                            response = new IpConfigResponse(false, "Invalid request format.");
                         }
                     }
                     catch (Exception ex)
                     {
-                        response = new IpConfigResponse { Success = false, Message = $"Error: {ex.Message}" };
+                        response = new IpConfigResponse(false, $"Error: {ex.Message}");
                     }
 
-                    await writer.WriteLineAsync(JsonSerializer.Serialize(response));
+                    await writer.WriteLineAsync(JsonSerializer.Serialize(response, IpChangerJsonContext.Default.IpConfigResponse));
                     await writer.FlushAsync();
                     // Give client time to read before closing pipe
                     await Task.Delay(100, stoppingToken);

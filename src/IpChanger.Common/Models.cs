@@ -1,19 +1,23 @@
-using System;
+using System.Text.Json.Serialization;
 
 namespace IpChanger.Common;
 
-public class IpConfigRequest
-{
-    public string AdapterId { get; set; } = string.Empty;
-    public bool UseDhcp { get; set; } = false;
-    public string IpAddress { get; set; } = string.Empty;
-    public string SubnetMask { get; set; } = "255.255.255.0";
-    public string Gateway { get; set; } = string.Empty;
-    public string Dns { get; set; } = string.Empty;
-}
+public record IpConfigRequest(
+    string AdapterId = "",
+    bool UseDhcp = false,
+    string IpAddress = "",
+    string SubnetMask = "255.255.255.0",
+    string Gateway = "",
+    string Dns = "");
 
-public class IpConfigResponse
+public record IpConfigResponse(bool Success, string Message = "");
+
+/// <summary>
+/// Source-generated JSON serializer context for trim-safe and AOT-compatible serialization.
+/// </summary>
+[JsonSerializable(typeof(IpConfigRequest))]
+[JsonSerializable(typeof(IpConfigResponse))]
+[JsonSourceGenerationOptions(WriteIndented = false)]
+public partial class IpChangerJsonContext : JsonSerializerContext
 {
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
 }
