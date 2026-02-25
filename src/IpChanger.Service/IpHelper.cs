@@ -13,6 +13,13 @@ public static class IpHelper
                parsed.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
     }
 
+    public static string GetWmiQuery(string adapterId)
+    {
+        // WMI Optimization: Filter by SettingID at the source
+        var safeId = adapterId.Replace("'", "''");
+        return $"SELECT SettingID FROM Win32_NetworkAdapterConfiguration WHERE SettingID = '{safeId}'";
+    }
+
     public static IpConfigResponse ApplyConfig(IpConfigRequest request)
     {
         try
@@ -51,8 +58,7 @@ public static class IpHelper
             }
 
             // WMI Optimization: Filter by SettingID at the source
-            var safeId = request.AdapterId.Replace("'", "''");
-            using var searcher = new ManagementObjectSearcher($"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE SettingID = '{safeId}'");
+            using var searcher = new ManagementObjectSearcher(GetWmiQuery(request.AdapterId));
             using var collection = searcher.Get();
 
             foreach (ManagementObject obj in collection)
